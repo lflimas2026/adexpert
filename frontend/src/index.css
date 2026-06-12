@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --bg: #0f0d2e; --surface: #1e1b4b; --sidebar: #0f0d2e; --text: #e2e8f0; --text-secondary: #94a3b8; --border: #1e293b; }
+.light { --bg: #f1f5f9; --surface: #ffffff; --sidebar: #f8fafc; --text: #1e293b; --text-secondary: #64748b; --border: #e2e8f0; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.animate-pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+.card-gradient { background: linear-gradient(135deg, var(--surface), rgba(99, 102, 241, 0.05)); }
+.badge { @apply text-xs font-medium px-2 py-0.5 rounded-full; }
+.status-active { @apply bg-emerald-500/10 text-emerald-400; }
+.status-paused { @apply bg-amber-500/10 text-amber-400; }
+.status-critical { @apply bg-red-500/10 text-red-400; }
