@@ -1,0 +1,10 @@
+name = "adexpert"
+compatibility_date = "2024-07-01"
+
+pages_build_output_dir = "dist"
+
+[build]
+command = "npm run build"
+
+[env.production]
+route = "adexpert.runtime.ia.br/*"

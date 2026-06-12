@@ -1,0 +1,10 @@
+name = "adexpert-api"
+compatibility_date = "2024-07-01"
+compatibility_flags = ["nodejs_compat"]
+main = "src/worker.ts"
+
+[build]
+command = ""
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
