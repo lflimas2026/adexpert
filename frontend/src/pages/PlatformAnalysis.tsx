@@ -11,12 +11,14 @@ const platformColors: Record<string, string> = { meta: 'text-blue-400', google: 
 export default function PlatformAnalysis() {
   const { platform } = useParams();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api.getCampaigns(platform).then(setCampaigns);
+    setLoaded(false);
+    api.getCampaigns(platform).then(d => { setCampaigns(d); setLoaded(true); });
   }, [platform]);
 
-  if (!campaigns.length) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Carregando...</div>;
+  if (!loaded) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Carregando...</div>;
 
   const totalSpend = campaigns.reduce((s, c) => s + c.metrics.cost, 0);
   const totalClicks = campaigns.reduce((s, c) => s + c.metrics.clicks, 0);

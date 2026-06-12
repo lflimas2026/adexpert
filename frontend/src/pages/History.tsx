@@ -4,12 +4,15 @@ import { api } from '../services/api';
 
 export default function History() {
   const [data, setData] = useState<any>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api.getInsights().then(setData);
+    api.getInsights().then(d => { setData(d); setLoaded(true); });
   }, []);
 
-  if (!data) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Carregando...</div>;
+  if (!loaded) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Carregando...</div>;
+  if (!data) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Sem dados disponíveis</div>;
+  const d = data;
 
   return (
     <div className="space-y-6">
@@ -19,23 +22,23 @@ export default function History() {
         <h3 className="text-sm font-semibold text-[var(--text)] mb-4">Estatísticas desde o início</h3>
         <div className="grid grid-cols-5 gap-3">
           <div className="p-3 rounded-lg bg-white/5 text-center">
-            <p className="text-2xl font-bold text-primary-400">{data.total_recommendations}</p>
+            <p className="text-2xl font-bold text-primary-400">{d.total_recommendations}</p>
             <p className="text-xs text-[var(--text-secondary)]">Recomendações</p>
           </div>
           <div className="p-3 rounded-lg bg-emerald-500/5 text-center">
-            <p className="text-2xl font-bold text-emerald-400">{data.success_rate}%</p>
+            <p className="text-2xl font-bold text-emerald-400">{d.success_rate}%</p>
             <p className="text-xs text-[var(--text-secondary)]">Taxa de Sucesso</p>
           </div>
           <div className="p-3 rounded-lg bg-emerald-500/5 text-center">
-            <p className="text-2xl font-bold text-emerald-400">R$ {data.total_savings.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-emerald-400">R$ {d.total_savings.toLocaleString()}</p>
             <p className="text-xs text-[var(--text-secondary)]">Economias</p>
           </div>
           <div className="p-3 rounded-lg bg-emerald-500/5 text-center">
-            <p className="text-2xl font-bold text-emerald-400">R$ {data.total_extra.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-emerald-400">R$ {d.total_extra.toLocaleString()}</p>
             <p className="text-xs text-[var(--text-secondary)]">Ganho Extra</p>
           </div>
           <div className="p-3 rounded-lg bg-primary-500/5 text-center">
-            <p className="text-2xl font-bold text-primary-400">{data.overall_roi}% 🚀</p>
+            <p className="text-2xl font-bold text-primary-400">{d.overall_roi}% 🚀</p>
             <p className="text-xs text-[var(--text-secondary)]">ROI Total</p>
           </div>
         </div>
@@ -44,7 +47,7 @@ export default function History() {
       <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="border rounded-xl p-5">
         <h3 className="text-sm font-semibold text-[var(--text)] mb-4">Campanhas que mais funcionaram 🏆</h3>
         <div className="space-y-3">
-          {data.top_campaigns.map((c: any, i: number) => (
+          {d.top_campaigns.map((c: any, i: number) => (
             <div key={i} className="p-4 rounded-lg bg-white/5">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -68,7 +71,7 @@ export default function History() {
         <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="border rounded-xl p-5">
           <h3 className="text-sm font-semibold text-[var(--text)] mb-4 flex items-center gap-2"><Lightbulb size={16} className="text-amber-400" /> Padrões Descobertos</h3>
           <div className="space-y-3">
-            {data.patterns.map((p: any, i: number) => (
+            {d.patterns.map((p: any, i: number) => (
               <div key={i} className="p-3 rounded-lg bg-white/5">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs text-amber-400">🔍 Insight {i + 1}</span>
@@ -84,7 +87,7 @@ export default function History() {
         <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="border rounded-xl p-5">
           <h3 className="text-sm font-semibold text-[var(--text)] mb-4 flex items-center gap-2"><AlertTriangle size={16} className="text-red-400" /> Campanhas com Problema</h3>
           <div className="space-y-3">
-            {data.failures.map((f: any, i: number) => (
+            {d.failures.map((f: any, i: number) => (
               <div key={i} className="p-3 rounded-lg bg-red-500/5 border border-red-500/10">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-sm font-medium text-[var(--text)]">❌ {f.name}</p>
@@ -101,7 +104,7 @@ export default function History() {
       <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="border rounded-xl p-5">
         <h3 className="text-sm font-semibold text-[var(--text)] mb-4 flex items-center gap-2"><Zap size={16} className="text-primary-400" /> Recomendações Futuras</h3>
         <div className="space-y-3">
-          {data.future.map((f: any, i: number) => (
+          {d.future.map((f: any, i: number) => (
             <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-primary-400">{i + 1}.</span>

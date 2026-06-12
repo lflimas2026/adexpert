@@ -6,11 +6,16 @@ import StatCard from '../components/StatCard';
 export default function Comparator() {
   const [comparison, setComparison] = useState<any[]>([]);
   const [earnings, setEarnings] = useState<any>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    api.getDashboard().then(d => setComparison(d.platformComparison));
-    api.getEarnings().then(setEarnings);
+    Promise.all([
+      api.getDashboard().then(d => setComparison(d.platformComparison)),
+      api.getEarnings().then(setEarnings)
+    ]).then(() => setLoaded(true));
   }, []);
+
+  if (!loaded) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Carregando...</div>;
 
   const platformColors: Record<string, string> = { 'Meta Ads': 'text-blue-400 bg-blue-500/10', 'Google Ads': 'text-amber-400 bg-amber-500/10', 'TikTok': 'text-purple-400 bg-purple-500/10' };
   const barColors: Record<string, string> = { 'Meta Ads': 'bg-blue-500', 'Google Ads': 'bg-amber-500', 'TikTok': 'bg-purple-500' };
