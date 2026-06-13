@@ -185,7 +185,7 @@ export default function CampaignDetail() {
                 { label: 'Período', value: `${campaign.start_date} ${campaign.end_date ? `à ${campaign.end_date}` : '(em andamento)'}` },
                 { label: 'Budget', value: `R$ ${campaign.budget_daily}/dia` },
                 { label: 'CPA Alvo', value: campaign.target_cpa ? `R$ ${campaign.target_cpa}` : '-' },
-                { label: 'Criada em', value: campaign.last_updated ? new Date(campaign.last_updated).toLocaleDateString('pt-BR') : '-' },
+                { label: 'Início', value: campaign.start_date ? new Date(campaign.start_date).toLocaleDateString('pt-BR') : '-' },
               ].map(info => (
                 <div key={info.label} className="flex justify-between py-1.5 border-b border-[var(--border)] last:border-0">
                   <span className="text-sm text-[var(--text-secondary)]">{info.label}</span>

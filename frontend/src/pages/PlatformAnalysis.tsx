@@ -15,7 +15,7 @@ export default function PlatformAnalysis() {
 
   useEffect(() => {
     setLoaded(false);
-    api.getCampaigns(platform).then(d => { setCampaigns(d); setLoaded(true); });
+    api.getCampaigns({ platform }).then(d => { setCampaigns(d); setLoaded(true); });
   }, [platform]);
 
   if (!loaded) return <div className="flex items-center justify-center h-64 text-[var(--text-secondary)]">Carregando...</div>;

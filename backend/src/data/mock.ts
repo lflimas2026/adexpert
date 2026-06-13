@@ -394,12 +394,12 @@ export const connectedAccounts = [
   {
     id: "ca2",
     platform: "google",
-    account_name: "sua_conta@gmail.com",
-    is_active: true,
-    last_synced: "2024-06-12T12:25:00Z",
-    permissions: "Read + Write",
-    sync_status: "active",
-    stats: { campaigns: 10, keywords: 450, metrics_days: 90 }
+    account_name: null,
+    is_active: false,
+    last_synced: null,
+    permissions: null,
+    sync_status: "disconnected",
+    stats: null
   },
   {
     id: "ca3",

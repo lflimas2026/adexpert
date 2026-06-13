@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, Archive, Plus, RefreshCw } from 'lucide-react';
+import { Eye, Archive, Plus, RefreshCw, X } from 'lucide-react';
 import { api } from '../services/api';
 import { Campaign } from '../types';
 
@@ -16,6 +16,8 @@ export default function Marketing() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [archivedFilter, setArchivedFilter] = useState('false');
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newForm, setNewForm] = useState({ name: '', platform: 'meta', budget_daily: 50, objective: 'vendas' });
 
   useEffect(() => {
     setLoading(true);
@@ -33,7 +35,7 @@ export default function Marketing() {
           <button onClick={() => api.getCampaigns({ archived: archivedFilter }).then(setCampaigns)} className="p-2 rounded-lg hover:bg-white/5 text-[var(--text-secondary)] transition-colors">
             <RefreshCw size={18} />
           </button>
-          <button className="px-4 py-2 rounded-lg bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 transition-colors flex items-center gap-2">
+          <button onClick={() => setShowNewModal(true)} className="px-4 py-2 rounded-lg bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 transition-colors flex items-center gap-2">
             <Plus size={16} /> Nova Campanha
           </button>
         </div>
@@ -113,6 +115,56 @@ export default function Marketing() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowNewModal(false)}>
+          <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="border rounded-xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-[var(--text)]">Nova Campanha</h3>
+              <button onClick={() => setShowNewModal(false)} className="p-1 rounded-lg hover:bg-white/5 text-[var(--text-secondary)]">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Nome</label>
+                <input value={newForm.name} onChange={e => setNewForm(f => ({ ...f, name: e.target.value }))} placeholder="Ex: Campanha Inverno 2024" className="w-full px-3 py-2 rounded-lg bg-white/5 border border-[var(--border)] text-[var(--text)] text-sm outline-none focus:border-primary-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Plataforma</label>
+                <select value={newForm.platform} onChange={e => setNewForm(f => ({ ...f, platform: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-[var(--border)] text-[var(--text)] text-sm outline-none focus:border-primary-500">
+                  <option value="meta">Meta Ads</option>
+                  <option value="google">Google Ads</option>
+                  <option value="tiktok">TikTok Ads</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Objetivo</label>
+                <select value={newForm.objective} onChange={e => setNewForm(f => ({ ...f, objective: e.target.value }))} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-[var(--border)] text-[var(--text)] text-sm outline-none focus:border-primary-500">
+                  <option value="vendas">Vendas</option>
+                  <option value="leads">Leads</option>
+                  <option value="alcance">Alcance</option>
+                  <option value="trafico">Tráfego</option>
+                  <option value="engajamento">Engajamento</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-[var(--text-secondary)] mb-1">Budget Diário (R$)</label>
+                <input type="number" value={newForm.budget_daily} onChange={e => { const v = Number(e.target.value); setNewForm(f => ({ ...f, budget_daily: v })); }} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-[var(--border)] text-[var(--text)] text-sm outline-none focus:border-primary-500" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowNewModal(false)} className="flex-1 px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--text)] text-sm font-medium hover:bg-white/5 transition-colors">Cancelar</button>
+              <button onClick={async () => {
+                if (!newForm.name.trim()) return;
+                await api.createCampaign({ name: newForm.name, platform: newForm.platform, objective: newForm.objective, budget_daily: newForm.budget_daily });
+                setShowNewModal(false);
+                setNewForm({ name: '', platform: 'meta', budget_daily: 50, objective: 'vendas' });
+                api.getCampaigns({ archived: archivedFilter }).then(setCampaigns);
+              }} className="flex-1 px-4 py-2 rounded-lg bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 transition-colors">Criar Campanha</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

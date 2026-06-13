@@ -2,18 +2,26 @@ const META_API_BASE = 'https://graph.facebook.com/v21.0';
 
 let accessToken: string | null = null;
 let adAccountId: string | null = null;
+let lastError: string | null = null;
 
 export function isMetaConfigured(): boolean {
-  return !!(accessToken && adAccountId);
+  return !!(accessToken && adAccountId
+    && accessToken !== 'seu_token_de_acesso'
+    && adAccountId !== 'seu_act_id');
 }
 
 export function configureMeta(token: string, accountId: string): void {
   accessToken = token;
-  adAccountId = accountId;
+  adAccountId = accountId.startsWith('act_') ? accountId : `act_${accountId}`;
+  lastError = null;
 }
 
 export function getMetaConfig() {
-  return { accessToken, adAccountId };
+  return { accessToken, adAccountId, lastError };
+}
+
+export function getMetaLastError(): string | null {
+  return lastError;
 }
 
 async function metaFetch<T>(endpoint: string, params: Record<string, string> = {}): Promise<T | null> {
@@ -27,11 +35,14 @@ async function metaFetch<T>(endpoint: string, params: Record<string, string> = {
     const res = await fetch(url.toString());
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
+      const msg = err?.error?.message || res.statusText;
+      lastError = `[${res.status}] ${msg}`;
       console.error('[Meta Ads] Erro na API:', err);
       return null;
     }
     return res.json();
-  } catch (err) {
+  } catch (err: any) {
+    lastError = err?.message || 'Erro de conexão';
     console.error('[Meta Ads] Erro de conexão:', err);
     return null;
   }
@@ -49,6 +60,7 @@ export async function getCampaigns() {
 
   return data.data.map((c: any) => ({
     id: c.id,
+    external_id: c.id,
     name: c.name,
     status: c.status === 'ACTIVE' ? 'active' : c.status === 'PAUSED' ? 'paused' : c.status?.toLowerCase(),
     objective: c.objective,

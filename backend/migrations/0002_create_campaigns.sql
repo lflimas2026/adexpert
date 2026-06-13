@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS campaigns (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id TEXT NOT NULL DEFAULT 'u1',
+  platform TEXT NOT NULL DEFAULT 'meta',
+  external_campaign_id TEXT,
+  name TEXT NOT NULL,
+  objective TEXT DEFAULT 'vendas',
+  status TEXT DEFAULT 'active',
+  budget_daily REAL DEFAULT 50,
+  start_date TEXT,
+  end_date TEXT,
+  target_cpa REAL,
+  last_updated TEXT DEFAULT (datetime('now')),
+  arquivada INTEGER DEFAULT 0,
+  metrics TEXT DEFAULT '{}',
+  creatives TEXT DEFAULT '[]',
+  audiences TEXT DEFAULT '[]',
+  placements TEXT DEFAULT '[]',
+  schedule TEXT DEFAULT '[]',
+  keywords TEXT DEFAULT '[]'
+);

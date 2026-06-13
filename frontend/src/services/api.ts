@@ -86,6 +86,7 @@ export const api = {
   },
   getCampaign: (id: string) => fetchAPI<Campaign | null>(`/api/campaigns/${id}`, null),
   updateCampaign: (id: string, data: Partial<Campaign>) => putAPI<Campaign | null>(`/api/campaigns/${id}`, data, null),
+  createCampaign: (data: Partial<Campaign>) => postAPI<Campaign | null>('/api/campaigns', data, null),
   archiveCampaign: (id: string) => postAPI<{ success: boolean } | null>(`/api/campaigns/${id}/archive`, {}, null),
   unarchiveCampaign: (id: string) => postAPI<{ success: boolean } | null>(`/api/campaigns/${id}/unarchive`, {}, null),
   getRecommendations: (params?: { status?: string; campaign_id?: string }) => {

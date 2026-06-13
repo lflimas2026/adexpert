@@ -7,6 +7,7 @@ import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import fs from 'fs';
 import { campaigns, recommendations, alerts, earnings, actionLogs, insights, connectedAccounts, aiConfigs, preferences, user } from './data/mock';
+const localCampaigns: any[] = [];
 import { initializeGemini, isGeminiConfigured, chat as geminiChat, analyzeCampaigns } from './services/gemini';
 import * as metaAds from './services/meta-ads';
 import * as googleAds from './services/google-ads';
@@ -49,18 +50,22 @@ app.post('/api/auth/login', (req, res) => {
 
 // Dashboard
 app.get('/api/dashboard', (req, res) => {
-  const totalSpending = campaigns.reduce((sum, c) => sum + c.metrics.cost, 0);
-  const totalClicks = campaigns.reduce((sum, c) => sum + c.metrics.clicks, 0);
-  const totalConversions = campaigns.reduce((sum, c) => sum + (c.metrics.conversions || 0), 0);
-  const avgRoas = totalSpending > 0 ? (campaigns.reduce((sum, c) => sum + (c.metrics.roas * c.metrics.cost), 0) / totalSpending) : 0;
+  const anyRealApi = metaAds.isMetaConfigured() || googleAds.isGoogleAdsConfigured() || tiktokAds.isTikTokConfigured();
+  const mockIds = new Set(['c1','c2','c3','c4','c5','c6']);
+  const dataCampaigns = anyRealApi ? campaigns.filter((c: { id: string }) => !mockIds.has(c.id)) : campaigns;
 
-  const active = campaigns.filter(c => c.status === 'active').length;
-  const paused = campaigns.filter(c => c.status === 'paused').length;
-  const critical = campaigns.filter(c => c.metrics.roas < 1).length;
-  const warning = campaigns.filter(c => c.metrics.roas >= 1 && c.metrics.roas < 1.5).length;
+  const totalSpending = dataCampaigns.reduce((sum, c) => sum + c.metrics.cost, 0);
+  const totalClicks = dataCampaigns.reduce((sum, c) => sum + c.metrics.clicks, 0);
+  const totalConversions = dataCampaigns.reduce((sum, c) => sum + (c.metrics.conversions || 0), 0);
+  const avgRoas = totalSpending > 0 ? (dataCampaigns.reduce((sum, c) => sum + (c.metrics.roas * c.metrics.cost), 0) / totalSpending) : 0;
+
+  const active = dataCampaigns.filter(c => c.status === 'active').length;
+  const paused = dataCampaigns.filter(c => c.status === 'paused').length;
+  const critical = dataCampaigns.filter(c => c.metrics.roas < 1).length;
+  const warning = dataCampaigns.filter(c => c.metrics.roas >= 1 && c.metrics.roas < 1.5).length;
 
   const platformComparison = ['meta', 'google', 'tiktok'].map(p => {
-    const pc = campaigns.filter(c => c.platform === p && c.status === 'active');
+    const pc = dataCampaigns.filter(c => c.platform === p && c.status === 'active');
     const spend = pc.reduce((s, c) => s + c.metrics.cost, 0);
     const conv = pc.reduce((s, c) => s + (c.metrics.conversions || 0), 0);
     const roas = spend > 0 ? pc.reduce((s, c) => s + c.metrics.roas * c.metrics.cost, 0) / spend : 0;
@@ -70,11 +75,11 @@ app.get('/api/dashboard', (req, res) => {
 
   res.json({
     summary: { spending: totalSpending, clicks: totalClicks, conversions: totalConversions, roas: +avgRoas.toFixed(1) },
-    status: { active, paused, critical, warning, total: campaigns.length },
-    topRecommendations: recommendations.filter(r => r.status === 'pending').slice(0, 3),
-    alerts,
+    status: { active, paused, critical, warning, total: dataCampaigns.length },
+    topRecommendations: anyRealApi ? [] : recommendations.filter(r => r.status === 'pending').slice(0, 3),
+    alerts: anyRealApi ? [] : alerts,
     platformComparison,
-    earnings
+    earnings: anyRealApi ? { total_spending: 0, estimated_savings: 0, actual_savings: 0, extra_revenue: 0, roi_improvement: 0, history: [] } : earnings
   });
 });
 
@@ -82,29 +87,37 @@ app.get('/api/dashboard', (req, res) => {
 app.get('/api/campaigns', async (req, res) => {
   const { platform, archived, includeArchived } = req.query;
 
+  const mockIds = new Set(['c1','c2','c3','c4','c5','c6']);
+
   if (platform === 'meta' && metaAds.isMetaConfigured()) {
     const realCampaigns = await metaAds.getCampaigns();
     if (realCampaigns) return res.json(realCampaigns);
+    return res.json(campaigns.filter((c: any) => !mockIds.has(c.id)));
   }
   if (platform === 'google' && googleAds.isGoogleAdsConfigured()) {
     const realCampaigns = await googleAds.getCampaigns();
     if (realCampaigns) return res.json(realCampaigns);
+    return res.json(campaigns.filter((c: any) => !mockIds.has(c.id)));
   }
   if (platform === 'tiktok' && tiktokAds.isTikTokConfigured()) {
     const realCampaigns = await tiktokAds.getCampaigns();
     if (realCampaigns) return res.json(realCampaigns);
+    return res.json(campaigns.filter((c: any) => !mockIds.has(c.id)));
   }
 
   let result = [...campaigns];
   if (platform && platform !== 'all') result = result.filter(c => c.platform === platform);
 
-  // Filtro de arquivadas
   if (includeArchived === 'true') {
-    // Retorna todas (arquivadas + ativas) - usado pela IA
   } else if (archived === 'true') {
     result = result.filter(c => c.arquivada === true);
   } else if (archived === 'false' || !archived) {
     result = result.filter(c => !c.arquivada);
+  }
+
+  const anyRealApi = metaAds.isMetaConfigured() || googleAds.isGoogleAdsConfigured() || tiktokAds.isTikTokConfigured();
+  if (anyRealApi) {
+    result = result.filter((c: any) => !mockIds.has(c.id));
   }
 
   res.json(result);
@@ -114,6 +127,35 @@ app.get('/api/campaigns/:id', (req, res) => {
   const campaign = campaigns.find(c => c.id === req.params.id);
   if (!campaign) return res.status(404).json({ error: 'Not found' });
   res.json(campaign);
+});
+
+app.post('/api/campaigns', (req, res) => {
+  const body = req.body;
+  const now = new Date().toISOString();
+  const newCampaign: any = {
+    id: `c${Date.now()}`,
+    user_id: 'u1',
+    platform: body.platform || 'meta',
+    external_campaign_id: null,
+    name: body.name || 'Nova Campanha',
+    objective: body.objective || 'vendas',
+    status: 'active',
+    budget_daily: Number(body.budget_daily) || 50,
+    start_date: body.start_date || now.split('T')[0],
+    end_date: body.end_date || undefined,
+    target_cpa: body.target_cpa ? Number(body.target_cpa) : undefined,
+    last_updated: now,
+    metrics: { clicks: 0, impressions: 0, ctr: 0, cpc: 0, cpm: 0, conversions: 0, cost: 0, roas: 0 },
+    arquivada: false,
+    creatives: [],
+    audiences: [],
+    placements: [],
+    schedule: [],
+    keywords: [],
+  };
+  campaigns.unshift(newCampaign);
+  localCampaigns.unshift(newCampaign);
+  res.json(newCampaign);
 });
 
 app.put('/api/campaigns/:id', (req, res) => {
@@ -164,13 +206,18 @@ app.post('/api/recommendations/:id/respond', (req, res) => {
 // Integrations
 app.get('/api/integrations', (req, res) => {
   res.json({
-    accounts: connectedAccounts.map(acc => ({
-      ...acc,
-      api_configured: acc.platform === 'meta' ? metaAds.isMetaConfigured()
+    accounts: connectedAccounts.map(acc => {
+      const configured = acc.platform === 'meta' ? metaAds.isMetaConfigured()
         : acc.platform === 'google' ? googleAds.isGoogleAdsConfigured()
         : acc.platform === 'tiktok' ? tiktokAds.isTikTokConfigured()
-        : false,
-    })),
+        : false;
+      return {
+        ...acc,
+        is_active: configured,
+        sync_status: configured ? 'active' : 'disconnected',
+        api_configured: configured,
+      };
+    }),
     aiConfigs: aiConfigs.map(cfg => ({
       ...cfg,
       api_configured: cfg.provider === 'gemini' ? isGeminiConfigured() : false,
