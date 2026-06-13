@@ -1,17 +1,18 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, PieChart, Settings, MessageSquare, History, Bot, Zap, BookOpen } from 'lucide-react';
+import { LayoutDashboard, BarChart3, PieChart, Settings, MessageSquare, History, Bot, Zap, BookOpen, Megaphone } from 'lucide-react';
 
 const items = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/marketing', icon: Megaphone, label: 'Campanhas' },
   { to: '/plataforma/meta', icon: BarChart3, label: 'Meta Ads' },
   { to: '/plataforma/google', icon: BarChart3, label: 'Google Ads' },
   { to: '/plataforma/tiktok', icon: BarChart3, label: 'TikTok Ads' },
   { to: '/comparador', icon: PieChart, label: 'Comparador' },
-  { to: '/integracoes', icon: Settings, label: 'Integrações & IA' },
-  { to: '/automacoes', icon: Zap, label: 'Automações' },
+  { to: '/integracoes', icon: Settings, label: 'Integracoes & IA' },
+  { to: '/automacoes', icon: Zap, label: 'Automacoes' },
   { to: '/chat', icon: MessageSquare, label: 'Chat Expert' },
-  { to: '/historico', icon: History, label: 'Histórico' },
-  { to: '/admin/docs-editor', icon: BookOpen, label: '📚 Documentação' },
+  { to: '/historico', icon: History, label: 'Historico' },
+  { to: '/admin/docs-editor', icon: BookOpen, label: 'Documentacao' },
 ];
 
 export default function Sidebar() {
@@ -47,7 +48,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-[var(--border)]">
         <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
           <Bot size={14} />
-          <span>Claude Sonnet ativo</span>
+          <span>Gemini ativo</span>
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 ml-auto" />
         </div>
       </div>

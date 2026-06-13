@@ -1,56 +1,46 @@
 const GOOGLE_ADS_API_BASE = 'https://googleads.googleapis.com/v18';
 
-interface GoogleAdsConfig {
-  developerToken: string | null;
-  clientId: string | null;
-  clientSecret: string | null;
-  refreshToken: string | null;
-  customerId: string | null;
-  loginCustomerId: string | null;
-}
-
-function getDefaultConfig(): GoogleAdsConfig {
-  return {
-    developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN || null,
-    clientId: process.env.GOOGLE_ADS_CLIENT_ID || null,
-    clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET || null,
-    refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN || null,
-    customerId: process.env.GOOGLE_ADS_CUSTOMER_ID || null,
-    loginCustomerId: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID || null,
-  };
-}
-
-let config: GoogleAdsConfig = getDefaultConfig();
+let developerToken: string | null = null;
+let clientId: string | null = null;
+let clientSecret: string | null = null;
+let refreshToken: string | null = null;
+let customerId: string | null = null;
+let loginCustomerId: string | null = null;
 let accessToken: string | null = null;
 
-function useConfig() {
-  if (!config.developerToken) config = getDefaultConfig();
-  return config;
-}
-
 export function isGoogleAdsConfigured(): boolean {
-  const cfg = useConfig();
-  return !!(cfg.developerToken && cfg.customerId && cfg.refreshToken
-    && cfg.developerToken !== 'seu_dev_token_aqui'
-    && cfg.customerId !== '1234567890');
+  return !!(developerToken && customerId && refreshToken
+    && developerToken !== 'seu_dev_token_aqui'
+    && customerId !== '1234567890');
 }
 
-export function configureGoogleAds(cfg: Partial<GoogleAdsConfig>): void {
-  config = { ...config, ...cfg };
+export function configureGoogleAds(cfg: {
+  developerToken?: string | null;
+  clientId?: string | null;
+  clientSecret?: string | null;
+  refreshToken?: string | null;
+  customerId?: string | null;
+  loginCustomerId?: string | null;
+}): void {
+  if (cfg.developerToken !== undefined) developerToken = cfg.developerToken;
+  if (cfg.clientId !== undefined) clientId = cfg.clientId;
+  if (cfg.clientSecret !== undefined) clientSecret = cfg.clientSecret;
+  if (cfg.refreshToken !== undefined) refreshToken = cfg.refreshToken;
+  if (cfg.customerId !== undefined) customerId = cfg.customerId;
+  if (cfg.loginCustomerId !== undefined) loginCustomerId = cfg.loginCustomerId;
 }
 
 async function refreshAccessToken(): Promise<string | null> {
-  const cfg = useConfig();
-  if (!cfg.clientId || !cfg.clientSecret || !cfg.refreshToken) return null;
+  if (!clientId || !clientSecret || !refreshToken) return null;
 
   try {
     const res = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        client_id: cfg.clientId,
-        client_secret: cfg.clientSecret,
-        refresh_token: cfg.refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
         grant_type: 'refresh_token',
       }),
     });
@@ -70,8 +60,7 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 async function googleAdsFetch(query: string): Promise<any> {
-  const cfg = useConfig();
-  if (!cfg.developerToken || !cfg.customerId) return null;
+  if (!developerToken || !customerId) return null;
 
   if (!accessToken) {
     const token = await refreshAccessToken();
@@ -80,14 +69,14 @@ async function googleAdsFetch(query: string): Promise<any> {
 
   const headers: Record<string, string> = {
     'Authorization': `Bearer ${accessToken}`,
-    'developer-token': cfg.developerToken,
-    'login-customer-id': cfg.loginCustomerId || cfg.customerId,
+    'developer-token': developerToken,
+    'login-customer-id': loginCustomerId || customerId,
     'Content-Type': 'application/json',
   };
 
   try {
     const res = await fetch(
-      `${GOOGLE_ADS_API_BASE}/customers/${cfg.customerId}/googleAds:search`,
+      `${GOOGLE_ADS_API_BASE}/customers/${customerId}/googleAds:search`,
       {
         method: 'POST',
         headers,
@@ -100,7 +89,7 @@ async function googleAdsFetch(query: string): Promise<any> {
       if (!token) return null;
       headers['Authorization'] = `Bearer ${token}`;
       const retryRes = await fetch(
-        `${GOOGLE_ADS_API_BASE}/customers/${cfg.customerId}/googleAds:search`,
+        `${GOOGLE_ADS_API_BASE}/customers/${customerId}/googleAds:search`,
         { method: 'POST', headers, body: JSON.stringify({ query }) }
       );
       if (!retryRes.ok) return null;

@@ -76,8 +76,18 @@ const emptyDashboard: DashboardData = {
 
 export const api = {
   getDashboard: () => fetchAPI<DashboardData>('/api/dashboard', emptyDashboard),
-  getCampaigns: (platform?: string) => fetchAPI<Campaign[]>(`/api/campaigns${platform ? `?platform=${platform}` : ''}`, []),
+  getCampaigns: (params?: { platform?: string; archived?: string; includeArchived?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.platform) q.set('platform', params.platform);
+    if (params?.archived) q.set('archived', params.archived);
+    if (params?.includeArchived) q.set('includeArchived', params.includeArchived);
+    const qs = q.toString();
+    return fetchAPI<Campaign[]>(`/api/campaigns${qs ? `?${qs}` : ''}`, []);
+  },
   getCampaign: (id: string) => fetchAPI<Campaign | null>(`/api/campaigns/${id}`, null),
+  updateCampaign: (id: string, data: Partial<Campaign>) => putAPI<Campaign | null>(`/api/campaigns/${id}`, data, null),
+  archiveCampaign: (id: string) => postAPI<{ success: boolean } | null>(`/api/campaigns/${id}/archive`, {}, null),
+  unarchiveCampaign: (id: string) => postAPI<{ success: boolean } | null>(`/api/campaigns/${id}/unarchive`, {}, null),
   getRecommendations: (params?: { status?: string; campaign_id?: string }) => {
     const q = new URLSearchParams();
     if (params?.status) q.set('status', params.status);

@@ -1,37 +1,26 @@
 const META_API_BASE = 'https://graph.facebook.com/v21.0';
 
-function getConfig() {
-  return {
-    accessToken: process.env.META_ADS_ACCESS_TOKEN || null,
-    adAccountId: process.env.META_ADS_ACCOUNT_ID || null,
-  };
-}
-
-let runtimeConfig: { accessToken: string | null; adAccountId: string | null } | null = null;
-
-function useConfig() {
-  return runtimeConfig || getConfig();
-}
+let accessToken: string | null = null;
+let adAccountId: string | null = null;
 
 export function isMetaConfigured(): boolean {
-  const cfg = useConfig();
-  return !!(cfg.accessToken && cfg.adAccountId);
+  return !!(accessToken && adAccountId);
 }
 
-export function configureMeta(accessToken: string, adAccountId: string): void {
-  runtimeConfig = { accessToken, adAccountId };
+export function configureMeta(token: string, accountId: string): void {
+  accessToken = token;
+  adAccountId = accountId;
 }
 
 export function getMetaConfig() {
-  return { ...useConfig() };
+  return { accessToken, adAccountId };
 }
 
 async function metaFetch<T>(endpoint: string, params: Record<string, string> = {}): Promise<T | null> {
-  const cfg = useConfig();
-  if (!cfg.accessToken) return null;
+  if (!accessToken) return null;
 
   const url = new URL(`${META_API_BASE}${endpoint}`);
-  url.searchParams.set('access_token', cfg.accessToken);
+  url.searchParams.set('access_token', accessToken);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
 
   try {
@@ -49,10 +38,9 @@ async function metaFetch<T>(endpoint: string, params: Record<string, string> = {
 }
 
 export async function getCampaigns() {
-  const cfg = useConfig();
-  if (!cfg.adAccountId) return null;
+  if (!adAccountId) return null;
 
-  const data = await metaFetch<any>(`/${cfg.adAccountId}/campaigns`, {
+  const data = await metaFetch<any>(`/${adAccountId}/campaigns`, {
     fields: 'id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time',
     limit: '50',
   });
@@ -70,10 +58,9 @@ export async function getCampaigns() {
 }
 
 export async function getCampaignInsights(campaignId?: string, datePreset: string = 'last_30d') {
-  const cfg = useConfig();
-  if (!cfg.adAccountId) return null;
+  if (!adAccountId) return null;
 
-  const id = campaignId || cfg.adAccountId;
+  const id = campaignId || adAccountId;
   const data = await metaFetch<any>(`/${id}/insights`, {
     fields: 'campaign_name,impressions,clicks,spend,ctr,cpc,cpm,reach,frequency,conversions,actions',
     date_preset: datePreset,

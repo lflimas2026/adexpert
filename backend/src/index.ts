@@ -22,7 +22,25 @@ app.use(express.text());
 
 const PORT = 3001;
 
-initializeGemini();
+initializeGemini(process.env.GEMINI_API_KEY);
+if (process.env.META_ADS_ACCESS_TOKEN) metaAds.configureMeta(process.env.META_ADS_ACCESS_TOKEN, process.env.META_ADS_ACCOUNT_ID || '');
+if (process.env.GOOGLE_ADS_DEVELOPER_TOKEN) {
+  googleAds.configureGoogleAds({
+    developerToken: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+    clientId: process.env.GOOGLE_ADS_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_ADS_CLIENT_SECRET,
+    refreshToken: process.env.GOOGLE_ADS_REFRESH_TOKEN,
+    customerId: process.env.GOOGLE_ADS_CUSTOMER_ID,
+  });
+}
+if (process.env.TIKTOK_ADS_ACCESS_TOKEN) {
+  tiktokAds.configureTikTok({
+    accessToken: process.env.TIKTOK_ADS_ACCESS_TOKEN,
+    advertiserId: process.env.TIKTOK_ADS_ADVERTISER_ID,
+    appId: process.env.TIKTOK_ADS_APP_ID,
+    secret: process.env.TIKTOK_ADS_SECRET,
+  });
+}
 
 // Auth
 app.post('/api/auth/login', (req, res) => {
@@ -62,7 +80,7 @@ app.get('/api/dashboard', (req, res) => {
 
 // Campaigns
 app.get('/api/campaigns', async (req, res) => {
-  const { platform } = req.query;
+  const { platform, archived, includeArchived } = req.query;
 
   if (platform === 'meta' && metaAds.isMetaConfigured()) {
     const realCampaigns = await metaAds.getCampaigns();
@@ -77,8 +95,18 @@ app.get('/api/campaigns', async (req, res) => {
     if (realCampaigns) return res.json(realCampaigns);
   }
 
-  let result = campaigns;
+  let result = [...campaigns];
   if (platform && platform !== 'all') result = result.filter(c => c.platform === platform);
+
+  // Filtro de arquivadas
+  if (includeArchived === 'true') {
+    // Retorna todas (arquivadas + ativas) - usado pela IA
+  } else if (archived === 'true') {
+    result = result.filter(c => c.arquivada === true);
+  } else if (archived === 'false' || !archived) {
+    result = result.filter(c => !c.arquivada);
+  }
+
   res.json(result);
 });
 
@@ -86,6 +114,35 @@ app.get('/api/campaigns/:id', (req, res) => {
   const campaign = campaigns.find(c => c.id === req.params.id);
   if (!campaign) return res.status(404).json({ error: 'Not found' });
   res.json(campaign);
+});
+
+app.put('/api/campaigns/:id', (req, res) => {
+  const campaign = campaigns.find(c => c.id === req.params.id);
+  if (!campaign) return res.status(404).json({ error: 'Not found' });
+  const allowed = ['name', 'status', 'budget_daily', 'target_cpa', 'objective', 'start_date', 'end_date'];
+  for (const key of allowed) {
+    if (req.body[key] !== undefined) {
+      (campaign as any)[key] = req.body[key];
+    }
+  }
+  campaign.last_updated = new Date().toISOString();
+  res.json(campaign);
+});
+
+app.post('/api/campaigns/:id/archive', (req, res) => {
+  const campaign = campaigns.find(c => c.id === req.params.id);
+  if (!campaign) return res.status(404).json({ error: 'Not found' });
+  campaign.arquivada = true;
+  campaign.last_updated = new Date().toISOString();
+  res.json({ success: true, campaign });
+});
+
+app.post('/api/campaigns/:id/unarchive', (req, res) => {
+  const campaign = campaigns.find(c => c.id === req.params.id);
+  if (!campaign) return res.status(404).json({ error: 'Not found' });
+  campaign.arquivada = false;
+  campaign.last_updated = new Date().toISOString();
+  res.json({ success: true, campaign });
 });
 
 // Recommendations

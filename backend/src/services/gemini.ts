@@ -8,8 +8,8 @@ export function isGeminiConfigured(): boolean {
   return !!apiKey;
 }
 
-export function initializeGemini(key?: string): boolean {
-  apiKey = key || process.env.GEMINI_API_KEY || null;
+export function initializeGemini(key?: string | null): boolean {
+  apiKey = key || null;
   if (!apiKey) return false;
 
   try {
@@ -56,7 +56,7 @@ Contexto das campanhas do usuário:
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       })),
-      systemInstruction: { parts: [{ text: systemInstruction }] },
+      systemInstruction: systemInstruction,
     });
 
     const lastMessage = messages[messages.length - 1]?.content || 'Olá';

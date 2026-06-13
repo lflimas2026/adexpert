@@ -88,8 +88,19 @@ app.get('/api/campaigns', async c => {
     if (realCampaigns) return c.json(realCampaigns);
   }
 
-  let result = campaigns;
+  let result = [...campaigns];
   if (platform && platform !== 'all') result = result.filter(cam => cam.platform === platform);
+
+  const archived = c.req.query('archived');
+  const includeArchived = c.req.query('includeArchived');
+  if (includeArchived === 'true') {
+    // Retorna todas
+  } else if (archived === 'true') {
+    result = result.filter(c => c.arquivada === true);
+  } else if (archived === 'false' || !archived) {
+    result = result.filter(c => !c.arquivada);
+  }
+
   return c.json(result);
 });
 
@@ -97,6 +108,36 @@ app.get('/api/campaigns/:id', c => {
   const cam = campaigns.find(cam => cam.id === c.req.param('id'));
   if (!cam) return c.json({ error: 'Not found' }, 404);
   return c.json(cam);
+});
+
+app.put('/api/campaigns/:id', async c => {
+  const cam = campaigns.find(cam => cam.id === c.req.param('id'));
+  if (!cam) return c.json({ error: 'Not found' }, 404);
+  const body = await c.req.json();
+  const allowed = ['name', 'status', 'budget_daily', 'target_cpa', 'objective', 'start_date', 'end_date'];
+  for (const key of allowed) {
+    if (body[key] !== undefined) {
+      (cam as any)[key] = body[key];
+    }
+  }
+  cam.last_updated = new Date().toISOString();
+  return c.json(cam);
+});
+
+app.post('/api/campaigns/:id/archive', c => {
+  const cam = campaigns.find(cam => cam.id === c.req.param('id'));
+  if (!cam) return c.json({ error: 'Not found' }, 404);
+  cam.arquivada = true;
+  cam.last_updated = new Date().toISOString();
+  return c.json({ success: true, campaign: cam });
+});
+
+app.post('/api/campaigns/:id/unarchive', c => {
+  const cam = campaigns.find(cam => cam.id === c.req.param('id'));
+  if (!cam) return c.json({ error: 'Not found' }, 404);
+  cam.arquivada = false;
+  cam.last_updated = new Date().toISOString();
+  return c.json({ success: true, campaign: cam });
 });
 
 app.get('/api/recommendations', c => {

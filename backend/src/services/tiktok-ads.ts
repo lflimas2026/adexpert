@@ -1,56 +1,44 @@
 const TIKTOK_API_BASE = 'https://business-api.tiktok.com/open_api/v1.3';
 
-interface TikTokConfig {
-  accessToken: string | null;
-  advertiserId: string | null;
-  appId: string | null;
-  secret: string | null;
-}
-
-function getDefaultConfig(): TikTokConfig {
-  return {
-    accessToken: process.env.TIKTOK_ADS_ACCESS_TOKEN || null,
-    advertiserId: process.env.TIKTOK_ADS_ADVERTISER_ID || null,
-    appId: process.env.TIKTOK_ADS_APP_ID || null,
-    secret: process.env.TIKTOK_ADS_SECRET || null,
-  };
-}
-
-let config: TikTokConfig = getDefaultConfig();
-
-function useConfig() {
-  if (!config.accessToken) config = getDefaultConfig();
-  return config;
-}
+let accessToken: string | null = null;
+let advertiserId: string | null = null;
+let appId: string | null = null;
+let secret: string | null = null;
 
 export function isTikTokConfigured(): boolean {
-  const cfg = useConfig();
-  return !!(cfg.accessToken && cfg.advertiserId
-    && cfg.accessToken !== 'seu_token_aqui'
-    && cfg.advertiserId !== 'seu_advertiser_id');
+  return !!(accessToken && advertiserId
+    && accessToken !== 'seu_token_aqui'
+    && advertiserId !== 'seu_advertiser_id');
 }
 
-export function configureTikTok(cfg: Partial<TikTokConfig>): void {
-  config = { ...config, ...cfg };
+export function configureTikTok(cfg: {
+  accessToken?: string | null;
+  advertiserId?: string | null;
+  appId?: string | null;
+  secret?: string | null;
+}): void {
+  if (cfg.accessToken !== undefined) accessToken = cfg.accessToken;
+  if (cfg.advertiserId !== undefined) advertiserId = cfg.advertiserId;
+  if (cfg.appId !== undefined) appId = cfg.appId;
+  if (cfg.secret !== undefined) secret = cfg.secret;
 }
 
-export function getTikTokConfig(): TikTokConfig {
-  return { ...useConfig() };
+export function getTikTokConfig() {
+  return { accessToken, advertiserId, appId, secret };
 }
 
 async function tiktokFetch<T>(endpoint: string, body: Record<string, any> = {}): Promise<T | null> {
-  const cfg = useConfig();
-  if (!cfg.accessToken) return null;
+  if (!accessToken) return null;
 
   try {
     const res = await fetch(`${TIKTOK_API_BASE}${endpoint}`, {
       method: 'POST',
       headers: {
-        'Access-Token': cfg.accessToken,
+        'Access-Token': accessToken,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        advertiser_id: cfg.advertiserId,
+        advertiser_id: advertiserId,
         ...body,
       }),
     });

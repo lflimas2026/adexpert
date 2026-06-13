@@ -21,6 +21,7 @@ export const campaigns = [
     start_date: "2024-01-01",
     target_cpa: 15,
     last_updated: "2024-06-12T12:30:00Z",
+    arquivada: false,
     metrics: {
       clicks: 1800,
       impressions: 72000,
@@ -68,6 +69,7 @@ export const campaigns = [
     end_date: "2024-05-30",
     target_cpa: 20,
     last_updated: "2024-06-10T14:00:00Z",
+    arquivada: true,
     metrics: {
       clicks: 900,
       impressions: 36000,
@@ -97,6 +99,7 @@ export const campaigns = [
     start_date: "2024-05-15",
     target_cpa: 12,
     last_updated: "2024-06-12T12:30:00Z",
+    arquivada: false,
     metrics: {
       clicks: 1200,
       impressions: 48000,
@@ -126,6 +129,7 @@ export const campaigns = [
     start_date: "2024-03-01",
     target_cpa: 18,
     last_updated: "2024-06-12T12:00:00Z",
+    arquivada: false,
     metrics: {
       clicks: 620,
       impressions: 15000,
@@ -155,6 +159,7 @@ export const campaigns = [
     start_date: "2024-04-01",
     target_cpa: 20,
     last_updated: "2024-06-12T12:00:00Z",
+    arquivada: false,
     metrics: {
       clicks: 380,
       impressions: 12000,
@@ -183,6 +188,7 @@ export const campaigns = [
     start_date: "2024-05-01",
     target_cpa: 12,
     last_updated: "2024-06-12T12:15:00Z",
+    arquivada: true,
     metrics: {
       clicks: 1400,
       impressions: 56000,

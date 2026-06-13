@@ -6,12 +6,12 @@ main = "src/worker.ts"
 [[d1_databases]]
 binding = "DB"
 database_name = "adexpert-db"
-database_id = "adexpert-db-local-id"
+database_id = "5247049a-e83d-4c2c-8ed1-7dca1e7f0439"
 
 [env.production]
 vars = { ENVIRONMENT = "production" }
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "adexpert-db"
-database_id = "adexpert-db-local-id"
+database_id = "5247049a-e83d-4c2c-8ed1-7dca1e7f0439"
 
