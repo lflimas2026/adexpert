@@ -30,14 +30,14 @@ export default function Chat() {
       <div className="flex items-center gap-2 mb-4">
         <Bot size={20} className="text-amber-400" />
         <h2 className="text-lg font-bold text-[var(--text)]">Chat com Expert (IA Consultant)</h2>
-        <span className="text-xs text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md">Powered by Claude Sonnet 4.6</span>
+        <span className="text-xs text-[var(--text-secondary)] bg-white/5 px-2 py-1 rounded-md">Powered by Gemini 2.5 Flash</span>
       </div>
 
       <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="flex-1 border rounded-xl overflow-hidden flex flex-col">
         <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin">
           {messages.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant' ? 'bg-amber-500/20 text-amber-400' : 'bg-primary-500/20 text-primary-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant' ? 'bg-blue-500/20 text-blue-400' : 'bg-primary-500/20 text-primary-400'}`}>
                 {msg.role === 'assistant' ? <Bot size={16} /> : <User size={16} />}
               </div>
               <div className={`max-w-[75%] rounded-xl p-3 text-sm leading-relaxed ${
@@ -53,7 +53,7 @@ export default function Chat() {
           ))}
           {loading && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400"><Bot size={16} /></div>
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400"><Bot size={16} /></div>
               <div className="bg-white/5 rounded-xl p-3 flex items-center gap-2">
                 <Loader2 size={14} className="animate-spin" />
                 <span className="text-sm text-[var(--text-secondary)]">Analisando...</span>

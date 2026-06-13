@@ -4,7 +4,7 @@ export const user = {
   email: "fernando@exemplo.com.br",
   company: "Loja Exemplo",
   plan: "professional",
-  primary_ai: "claude",
+  primary_ai: "gemini",
   created_at: "2024-01-15T10:00:00Z"
 };
 
@@ -216,7 +216,7 @@ export const recommendations = [
     expected_impact: "+R$ 480/dia em vendas",
     confidence: 95,
     reasoning: "ROAS 2.5x estável por 10 dias, frequência baixa (2.3), há espaço para escalar sem saturar o público. Histórico mostra que campanhas similares mantiveram ROAS > 2.0 com aumento de até 50%.",
-    generated_by_ai: "claude",
+    generated_by_ai: "gemini",
     status: "pending",
     created_at: "2024-06-12T10:00:00Z",
     score: 79
@@ -233,7 +233,7 @@ export const recommendations = [
     expected_impact: "-R$ 75/dia em desperdício",
     confidence: 87,
     reasoning: "A keyword 'comprar online' em broad match está gerando cliques irrelevantes com alto CPC (R$ 2.10) e zero conversões. É uma keyword genérica que atrai tráfego frio.",
-    generated_by_ai: "claude",
+    generated_by_ai: "gemini",
     status: "pending",
     created_at: "2024-06-12T10:00:00Z",
     score: 68
@@ -250,7 +250,7 @@ export const recommendations = [
     expected_impact: "-R$ 200/dia em prejuízo",
     confidence: 92,
     reasoning: "ROAS 0.6x está muito abaixo do break-even. Análise do criativo mostra baixa retenção nos primeiros 3 segundos. Sugerimos pausar ou testar novo gancho.",
-    generated_by_ai: "claude",
+    generated_by_ai: "gemini",
     status: "pending",
     created_at: "2024-06-12T10:00:00Z",
     score: 76
@@ -267,7 +267,7 @@ export const recommendations = [
     expected_impact: "Reduzir frequência em 30%, melhorar ROAS",
     confidence: 88,
     reasoning: "60% do Público A e Público B estão vendo o mesmo anúncio. Isso aumenta a frequência e causa fadiga mais rápido.",
-    generated_by_ai: "claude",
+    generated_by_ai: "gemini",
     status: "accepted",
     created_at: "2024-06-11T14:00:00Z",
     score: 72
@@ -323,7 +323,7 @@ export const actionLogs = [
     impact_expected: "-R$ 50/dia",
     impact_actual: "-R$ 48/dia",
     implemented_by: "ai_auto",
-    ai_provider_used: "claude",
+    ai_provider_used: "gemini",
     timestamp: "2024-06-12T14:32:00Z",
     reason: "ROAS 0.8x < 1.2 limit"
   },
@@ -338,7 +338,7 @@ export const actionLogs = [
     impact_expected: "+R$ 80/dia em vendas",
     impact_actual: "+R$ 76/dia",
     implemented_by: "user",
-    ai_provider_used: "claude",
+    ai_provider_used: "gemini",
     timestamp: "2024-06-12T12:15:00Z",
     reason: "CTR subiu 40%, ROAS 2.8x"
   }
@@ -410,17 +410,17 @@ export const connectedAccounts = [
 export const aiConfigs = [
   {
     id: "ai1",
-    provider: "claude",
+    provider: "gemini",
     is_primary: true,
     status: "active",
     tokens_used_this_month: 1245,
-    models: ["claude-opus-4-6", "claude-sonnet-4-6", "claude-haiku-4-5"],
-    selected_model: "claude-sonnet-4-6",
-    last_analyses: { meta: 12, google: 5, avg_time: 3.2 }
+    models: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+    selected_model: "gemini-2.5-flash",
+    last_analyses: { meta: 12, google: 5, avg_time: 2.8 }
   },
   {
     id: "ai2",
-    provider: "gemini",
+    provider: "claude",
     is_primary: false,
     status: "disconnected",
     tokens_used_this_month: 0,

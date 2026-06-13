@@ -3,8 +3,8 @@
 ## 1. ARQUITETURA DO APP
 O AdExpert é estruturado de forma híbrida para oferecer desenvolvimento ágil localmente e performance/escala otimizadas em produção:
 - **Frontend:** React 18, Vite, TypeScript, Tailwind CSS, Lucide React e Recharts.
-- **Backend Express (Local Dev):** Servidor Node.js em `http://localhost:3001` rodando com tsx, gerenciando dados em arquivos e mock local.
-- **Backend Worker Hono (Produção & Wrangler Dev):** Cloudflare Workers Hono API conectada à D1.
+- **Backend Express (Local Dev):** Servidor Node.js em `http://localhost:3001` rodando com tsx, gerenciando dados em arquivos e mock local. Carrega variáveis de ambiente via `dotenv` (arquivo `.env`).
+- **Backend Worker Hono (Produção & Wrangler Dev):** Cloudflare Workers Hono API conectada à D1. Variáveis de ambiente configuradas via Cloudflare Dashboard ou `wrangler.toml`.
 - **Banco de Dados (D1/SQLite):** Tabela docs_backup para persistência e versionamento de backups de documentação.
 
 ---
@@ -13,9 +13,9 @@ O AdExpert é estruturado de forma híbrida para oferecer desenvolvimento ágil 
 - **Dashboard:** Visão geral rápida sobre gastos diários, volume de cliques/conversões, ROAS geral das plataformas integradas e lista de alertas de tráfego.
 - **Análise por Plataforma:** Páginas específicas para Meta Ads, Google Ads e TikTok Ads, detalhando dados de campanhas individuais.
 - **Comparador:** Painel interativo para confrontar métricas de ROAS, CPA e budget de diferentes canais simultaneamente.
-- **Integrações & IA:** Setup de conexões a ad accounts e chaves de IA (Claude, GPT, Gemini).
+- **Integrações & IA:** Setup de conexões a ad accounts (Meta Ads, Google Ads, TikTok Ads) e chaves de IA (Gemini como principal).
 - **Automações:** Configuração de regras automáticas recomendadas por IA.
-- **Chat Expert:** Assistente conversacional em tempo real capaz de analisar campanhas em português.
+- **Chat Expert:** Assistente conversacional em tempo real (Gemini) capaz de analisar campanhas em português.
 - **Histórico (Action Logs):** Log detalhado das recomendações aplicadas ou desconsideradas.
 - **Editor de Documentação (/admin/docs-editor):** Interface web administrativa para ler e atualizar este arquivo e mantê-lo sincronizado com a base de backups.
 
@@ -52,16 +52,55 @@ CREATE TABLE docs_backup (
 
 ---
 
-## 5. DEPLOY E AMBIENTES
+## 5. APIs DE TERCEIROS
+
+O AdExpert se integra com as seguintes APIs externas:
+
+### Gemini (Google AI) - IA Principal
+- **SDK:** `@google/generative-ai`
+- **Chave:** `GEMINI_API_KEY` (obter em https://aistudio.google.com/apikey)
+- **Modelo padrão:** `gemini-2.5-flash`
+- Uso: Chat, análise de campanhas, geração de recomendações.
+- Fallback: respostas baseadas em regras quando a API não está configurada.
+
+### Meta Ads (Facebook/Instagram)
+- **API:** Graph API v21.0 (REST)
+- **Chaves:** `META_ADS_ACCESS_TOKEN`, `META_ADS_ACCOUNT_ID`
+- Permissões necessárias: `ads_read`, `ads_management`
+- Fallback: dados mock quando a API não está configurada.
+
+### Google Ads
+- **API:** Google Ads API v18 (REST via googleads.googleapis.com)
+- **Chaves:** `GOOGLE_ADS_DEVELOPER_TOKEN`, `GOOGLE_ADS_CLIENT_ID`, `GOOGLE_ADS_CLIENT_SECRET`, `GOOGLE_ADS_REFRESH_TOKEN`, `GOOGLE_ADS_CUSTOMER_ID`
+- Autenticação: OAuth2 com refresh token.
+- Fallback: dados mock quando a API não está configurada.
+
+### TikTok Ads
+- **API:** TikTok Business API v1.3
+- **Chaves:** `TIKTOK_ADS_ACCESS_TOKEN`, `TIKTOK_ADS_ADVERTISER_ID`
+- Fallback: dados mock quando a API não está configurada.
+
+---
+
+## 6. DEPLOY E AMBIENTES
 - **Ambiente de Produção:**
   - Frontend: Cloudflare Pages conectado ao repositório GitHub (`https://github.com/lflimas2026/adexpert`).
   - Backend API: Cloudflare Workers Hono (`adexpert-api`) conectado ao D1 SQL.
 - **Variáveis de Ambiente:**
   - `VITE_API_URL`: URL base do backend (ex: `https://api.adexpert.com` ou `http://localhost:3001` local).
+  - Demais variáveis de API: configuradas via `.env` (dev) ou Cloudflare Dashboard (produção).
+  - Ver `backend/.env.example` para lista completa de variáveis.
 
 ---
 
-## 6. CHANGELOG
+## 7. CHANGELOG
+
+### [2026-06-13] Migração para Gemini + Integrações Reais de API
+- **Alteração:** Troca do provedor de IA principal de Claude (Anthropic) para Gemini (Google).
+- **Novos serviços:** Criação de serviços de API para Gemini, Meta Ads, Google Ads e TikTok Ads em `backend/src/services/`.
+- **Arquitetura híbrida:** Quando as chaves de API estão configuradas no `.env`, o sistema faz chamadas reais; caso contrário, usa dados mock como fallback.
+- **Chat:** Agora usa Gemini 2.5 Flash quando configurado, com fallback para respostas baseadas em regras.
+- **Integrações:** Interface agora mostra status de configuração das APIs (se a chave está presente no .env).
 
 ### [2026-06-13] Novo Sistema de Documentação em Arquivo Físico
 - **Alteração:** Migração do sistema de CRUD modular em D1 para um arquivo de texto estruturado centralizado em `/docs/app-docs.txt`.

@@ -1,10 +1,16 @@
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import fs from 'fs';
-import path from 'path';
 import { campaigns, recommendations, alerts, earnings, actionLogs, insights, connectedAccounts, aiConfigs, preferences, user } from './data/mock';
+import { initializeGemini, isGeminiConfigured, chat as geminiChat, analyzeCampaigns } from './services/gemini';
+import * as metaAds from './services/meta-ads';
+import * as googleAds from './services/google-ads';
+import * as tiktokAds from './services/tiktok-ads';
 
 const app = express();
 const server = createServer(app);
@@ -15,6 +21,8 @@ app.use(express.json());
 app.use(express.text());
 
 const PORT = 3001;
+
+initializeGemini();
 
 // Auth
 app.post('/api/auth/login', (req, res) => {
@@ -53,8 +61,22 @@ app.get('/api/dashboard', (req, res) => {
 });
 
 // Campaigns
-app.get('/api/campaigns', (req, res) => {
+app.get('/api/campaigns', async (req, res) => {
   const { platform } = req.query;
+
+  if (platform === 'meta' && metaAds.isMetaConfigured()) {
+    const realCampaigns = await metaAds.getCampaigns();
+    if (realCampaigns) return res.json(realCampaigns);
+  }
+  if (platform === 'google' && googleAds.isGoogleAdsConfigured()) {
+    const realCampaigns = await googleAds.getCampaigns();
+    if (realCampaigns) return res.json(realCampaigns);
+  }
+  if (platform === 'tiktok' && tiktokAds.isTikTokConfigured()) {
+    const realCampaigns = await tiktokAds.getCampaigns();
+    if (realCampaigns) return res.json(realCampaigns);
+  }
+
   let result = campaigns;
   if (platform && platform !== 'all') result = result.filter(c => c.platform === platform);
   res.json(result);
@@ -84,18 +106,59 @@ app.post('/api/recommendations/:id/respond', (req, res) => {
 
 // Integrations
 app.get('/api/integrations', (req, res) => {
-  res.json({ accounts: connectedAccounts, aiConfigs, preferences });
+  res.json({
+    accounts: connectedAccounts.map(acc => ({
+      ...acc,
+      api_configured: acc.platform === 'meta' ? metaAds.isMetaConfigured()
+        : acc.platform === 'google' ? googleAds.isGoogleAdsConfigured()
+        : acc.platform === 'tiktok' ? tiktokAds.isTikTokConfigured()
+        : false,
+    })),
+    aiConfigs: aiConfigs.map(cfg => ({
+      ...cfg,
+      api_configured: cfg.provider === 'gemini' ? isGeminiConfigured() : false,
+    })),
+    preferences,
+  });
 });
 
-app.post('/api/integrations/connect/:platform', (req, res) => {
-  res.json({ success: true, message: `Conectando ${req.params.platform}...` });
+app.post('/api/integrations/connect/:platform', async (req, res) => {
+  const { platform } = req.params;
+  const { accessToken, accountId } = req.body;
+
+  if (platform === 'meta' && accessToken && accountId) {
+    metaAds.configureMeta(accessToken, accountId);
+    const account = connectedAccounts.find(a => a.platform === 'meta');
+    if (account) {
+      account.is_active = true;
+      account.sync_status = 'active';
+      account.last_synced = new Date().toISOString();
+    }
+    return res.json({ success: true, message: 'Meta Ads conectado com sucesso!' });
+  }
+
+  if (platform === 'tiktok' && accessToken) {
+    tiktokAds.configureTikTok({ accessToken, advertiserId: accountId || req.body.advertiserId });
+    const account = connectedAccounts.find(a => a.platform === 'tiktok');
+    if (account) {
+      account.is_active = true;
+      account.sync_status = 'active';
+      account.last_synced = new Date().toISOString();
+    }
+    return res.json({ success: true, message: 'TikTok Ads conectado com sucesso!' });
+  }
+
+  res.json({ success: true, message: `Conectando ${platform}...` });
 });
 
 app.post('/api/integrations/ai/:provider/connect', (req, res) => {
   const config = aiConfigs.find(c => c.provider === req.params.provider);
   if (config) {
     config.status = 'active';
-    config.selected_model = req.body.model || 'claude-sonnet-4-6';
+    config.selected_model = req.body.model || 'gemini-2.5-flash';
+    if (req.params.provider === 'gemini' && req.body.apiKey) {
+      initializeGemini(req.body.apiKey);
+    }
   }
   res.json({ success: true, config });
 });
@@ -146,8 +209,7 @@ const saveTxtDocs = (content: string) => {
       fs.mkdirSync(docsDir, { recursive: true });
     }
     fs.writeFileSync(txtFilePath, content, 'utf-8');
-    
-    // Backup emulation
+
     let backups: any[] = [];
     if (fs.existsSync(backupsFilePath)) {
       try {
@@ -185,21 +247,37 @@ app.post('/api/docs/save', (req, res) => {
   }
 });
 
+// Chat com Gemini
+app.post('/api/chat', async (req, res) => {
+  const { message, history } = req.body;
 
-// Chat
-const chatContext = `Você é o AdExpert, um consultor de tráfego pago IA 24/7. 
-Você analisa campanhas de Meta Ads, Google Ads e TikTok Ads e dá recomendações.
-Sempre responda em português brasileiro, de forma amigável e profissional.
-Use dados reais quando disponíveis.`;
+  if (!message) {
+    return res.json({ reply: 'Olá! Como posso ajudar com suas campanhas hoje?' });
+  }
 
-app.post('/api/chat', (req, res) => {
-  const { message } = req.body;
+  if (isGeminiConfigured()) {
+    try {
+      const messages = [
+        ...(history || []),
+        { role: 'user', content: message }
+      ];
+      const reply = await geminiChat(messages);
+      return res.json({ reply });
+    } catch (err: any) {
+      console.error('[Chat] Erro com Gemini, usando fallback:', err.message, err.stack);
+    }
+  }
+
   const responses: Record<string, string> = {
     "sim": "Ótimo! Vamos às recomendações:\n\n1️⃣ **Meta Ads - Verão 2024** 🟢\nROAS 2.5x estável há 10 dias. Sugiro aumentar o budget em 50% para capturar mais vendas. Impacto estimado: +R$ 480/dia.\n\n2️⃣ **Google Search - Genérico** 🟡\nA keyword 'comprar online' em broad match gastou R$ 75 com zero conversões. Sugiro pausar e realocar esse budget.\n\n3️⃣ **TikTok - Teste A** 🔴\nROAS 0.6x com CPM alto. Prejuízo de R$ 200/dia. Recomendo pausar e reformular o criativo.\n\nQuer implementar alguma delas agora?",
     "default": "Analisei suas campanhas e notei alguns padrões interessantes:\n\n📊 **Meta Ads**: Stories tem ROAS 2.9x - melhor placement!\n📊 **Google Ads**: Quality Score subiu para 7/10 👍\n📊 **TikTok**: Vídeo A tem 2.8% CTR - bem acima da média\n\nTem alguma campanha específica ou métrica que gostaria de analisar?"
   };
   const reply = responses[message.toLowerCase().trim()] || responses.default;
   setTimeout(() => res.json({ reply }), 500);
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', version: '1.0.0' });
 });
 
 // WebSocket
@@ -216,4 +294,8 @@ wss.on('connection', (ws) => {
 
 server.listen(PORT, () => {
   console.log(`AdExpert Backend running on http://localhost:${PORT}`);
+  console.log(`[APIs] Gemini: ${isGeminiConfigured() ? '✅ Configurado' : '❌ Não configurado (use .env)'}`);
+  console.log(`[APIs] Meta Ads: ${metaAds.isMetaConfigured() ? '✅ Configurado' : '❌ Não configurado (use .env)'}`);
+  console.log(`[APIs] Google Ads: ${googleAds.isGoogleAdsConfigured() ? '✅ Configurado' : '❌ Não configurado (use .env)'}`);
+  console.log(`[APIs] TikTok Ads: ${tiktokAds.isTikTokConfigured() ? '✅ Configurado' : '❌ Não configurado (use .env)'}`);
 });

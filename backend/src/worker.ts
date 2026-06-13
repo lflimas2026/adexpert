@@ -1,14 +1,55 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { campaigns, recommendations, alerts, earnings, actionLogs, insights, connectedAccounts, aiConfigs, preferences, user } from './data/mock';
+import { initializeGemini, isGeminiConfigured, chat as geminiChat } from './services/gemini';
+import * as metaAds from './services/meta-ads';
+import * as googleAds from './services/google-ads';
+import * as tiktokAds from './services/tiktok-ads';
 
 type Bindings = {
   DB: D1Database;
+  GEMINI_API_KEY?: string;
+  GEMINI_MODEL?: string;
+  META_ADS_ACCESS_TOKEN?: string;
+  META_ADS_ACCOUNT_ID?: string;
+  GOOGLE_ADS_DEVELOPER_TOKEN?: string;
+  GOOGLE_ADS_CLIENT_ID?: string;
+  GOOGLE_ADS_CLIENT_SECRET?: string;
+  GOOGLE_ADS_REFRESH_TOKEN?: string;
+  GOOGLE_ADS_CUSTOMER_ID?: string;
+  TIKTOK_ADS_ACCESS_TOKEN?: string;
+  TIKTOK_ADS_ADVERTISER_ID?: string;
+  TIKTOK_ADS_APP_ID?: string;
+  TIKTOK_ADS_SECRET?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('/*', cors({ origin: '*', credentials: true }));
+
+// Inicialização das APIs (executada em cada requisição Cloudflare)
+function initApis(c: any) {
+  const env = c.env as Bindings;
+  if (env.GEMINI_API_KEY) initializeGemini(env.GEMINI_API_KEY);
+  if (env.META_ADS_ACCESS_TOKEN) metaAds.configureMeta(env.META_ADS_ACCESS_TOKEN, env.META_ADS_ACCOUNT_ID || '');
+  if (env.GOOGLE_ADS_DEVELOPER_TOKEN) {
+    googleAds.configureGoogleAds({
+      developerToken: env.GOOGLE_ADS_DEVELOPER_TOKEN,
+      clientId: env.GOOGLE_ADS_CLIENT_ID,
+      clientSecret: env.GOOGLE_ADS_CLIENT_SECRET,
+      refreshToken: env.GOOGLE_ADS_REFRESH_TOKEN,
+      customerId: env.GOOGLE_ADS_CUSTOMER_ID,
+    });
+  }
+  if (env.TIKTOK_ADS_ACCESS_TOKEN) {
+    tiktokAds.configureTikTok({
+      accessToken: env.TIKTOK_ADS_ACCESS_TOKEN,
+      advertiserId: env.TIKTOK_ADS_ADVERTISER_ID,
+      appId: env.TIKTOK_ADS_APP_ID,
+      secret: env.TIKTOK_ADS_SECRET,
+    });
+  }
+}
 
 app.get('/api/dashboard', c => {
   const totalSpending = campaigns.reduce((s, cam) => s + cam.metrics.cost, 0);
@@ -30,8 +71,23 @@ app.get('/api/dashboard', c => {
   return c.json({ summary: { spending: totalSpending, clicks: totalClicks, conversions: totalConversions, roas: +avgRoas.toFixed(1) }, status: { active, paused, critical, warning, total: campaigns.length }, topRecommendations: recommendations.filter(r => r.status === 'pending').slice(0, 3), alerts, platformComparison, earnings });
 });
 
-app.get('/api/campaigns', c => {
+app.get('/api/campaigns', async c => {
   const platform = c.req.query('platform');
+  initApis(c);
+
+  if (platform === 'meta' && metaAds.isMetaConfigured()) {
+    const realCampaigns = await metaAds.getCampaigns();
+    if (realCampaigns) return c.json(realCampaigns);
+  }
+  if (platform === 'google' && googleAds.isGoogleAdsConfigured()) {
+    const realCampaigns = await googleAds.getCampaigns();
+    if (realCampaigns) return c.json(realCampaigns);
+  }
+  if (platform === 'tiktok' && tiktokAds.isTikTokConfigured()) {
+    const realCampaigns = await tiktokAds.getCampaigns();
+    if (realCampaigns) return c.json(realCampaigns);
+  }
+
   let result = campaigns;
   if (platform && platform !== 'all') result = result.filter(cam => cam.platform === platform);
   return c.json(result);
@@ -60,16 +116,63 @@ app.post('/api/recommendations/:id/respond', async c => {
   return c.json(rec);
 });
 
-app.get('/api/integrations', c => c.json({ accounts: connectedAccounts, aiConfigs, preferences }));
+app.get('/api/integrations', c => {
+  initApis(c);
+  return c.json({
+    accounts: connectedAccounts.map(acc => ({
+      ...acc,
+      api_configured: acc.platform === 'meta' ? metaAds.isMetaConfigured()
+        : acc.platform === 'google' ? googleAds.isGoogleAdsConfigured()
+        : acc.platform === 'tiktok' ? tiktokAds.isTikTokConfigured()
+        : false,
+    })),
+    aiConfigs: aiConfigs.map(cfg => ({
+      ...cfg,
+      api_configured: cfg.provider === 'gemini' ? isGeminiConfigured() : false,
+    })),
+    preferences,
+  });
+});
 
-app.post('/api/integrations/connect/:platform', c => c.json({ success: true, message: `Conectando ${c.req.param('platform')}...` }));
+app.post('/api/integrations/connect/:platform', async c => {
+  const { platform } = c.req.param();
+  const body = await c.req.json();
+  const { accessToken, accountId } = body;
+
+  if (platform === 'meta' && accessToken && accountId) {
+    metaAds.configureMeta(accessToken, accountId);
+    const account = connectedAccounts.find(a => a.platform === 'meta');
+    if (account) {
+      account.is_active = true;
+      account.sync_status = 'active';
+      account.last_synced = new Date().toISOString();
+    }
+    return c.json({ success: true, message: 'Meta Ads conectado com sucesso!' });
+  }
+
+  if (platform === 'tiktok' && accessToken) {
+    tiktokAds.configureTikTok({ accessToken, advertiserId: accountId || body.advertiserId });
+    const account = connectedAccounts.find(a => a.platform === 'tiktok');
+    if (account) {
+      account.is_active = true;
+      account.sync_status = 'active';
+      account.last_synced = new Date().toISOString();
+    }
+    return c.json({ success: true, message: 'TikTok Ads conectado com sucesso!' });
+  }
+
+  return c.json({ success: true, message: `Conectando ${platform}...` });
+});
 
 app.post('/api/integrations/ai/:provider/connect', async c => {
   const config = aiConfigs.find(cfg => cfg.provider === c.req.param('provider'));
   if (config) {
     config.status = 'active';
     const body = await c.req.json();
-    config.selected_model = body.model || 'claude-sonnet-4-6';
+    config.selected_model = body.model || 'gemini-2.5-flash';
+    if (c.req.param('provider') === 'gemini' && body.apiKey) {
+      initializeGemini(body.apiKey);
+    }
   }
   return c.json({ success: true, config });
 });
@@ -85,7 +188,27 @@ app.get('/api/action-logs', c => c.json(actionLogs));
 app.get('/api/earnings', c => c.json(earnings));
 
 app.post('/api/chat', async c => {
-  const { message } = await c.req.json();
+  const { message, history } = await c.req.json();
+
+  if (!message) {
+    return c.json({ reply: 'Olá! Como posso ajudar com suas campanhas hoje?' });
+  }
+
+  initApis(c);
+
+  if (isGeminiConfigured()) {
+    try {
+      const messages = [
+        ...(history || []),
+        { role: 'user', content: message }
+      ];
+      const reply = await geminiChat(messages);
+      return c.json({ reply });
+    } catch (err: any) {
+      console.error('[Chat] Erro com Gemini, usando fallback:', err.message);
+    }
+  }
+
   const lower = (message || '').toLowerCase().trim();
   const defaultReply = 'Analisei suas campanhas e notei padrões interessantes!\n\n📊 **Meta Ads**: Stories tem ROAS 2.9x - melhor placement!\n📊 **Google Ads**: Quality Score subiu para 7/10\n📊 **TikTok**: Vídeo A tem 2.8% CTR\n\nTem alguma campanha específica que gostaria de analisar?';
   const replies: Record<string, string> = {

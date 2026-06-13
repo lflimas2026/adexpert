@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Bot } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, ExternalLink, Bot, KeyRound } from 'lucide-react';
 import { api } from '../services/api';
 
 const platformIcons: Record<string, string> = { meta: '📱', google: '🔍', tiktok: '🎵' };
@@ -28,6 +28,7 @@ export default function Integrations() {
                   <div className="flex items-center gap-2">
                     <h4 className="font-semibold text-[var(--text)]">{acc.platform === 'meta' ? 'Meta Ads' : acc.platform === 'google' ? 'Google Ads' : 'TikTok Ads'}</h4>
                     {acc.is_active ? <span className="badge bg-emerald-500/10 text-emerald-400 flex items-center gap-1"><CheckCircle2 size={10} /> Conectado</span> : <span className="badge bg-red-500/10 text-red-400 flex items-center gap-1"><XCircle size={10} /> Desconectado</span>}
+                      {acc.api_configured && <span className="badge bg-blue-500/10 text-blue-400 flex items-center gap-1"><KeyRound size={10} /> API Key configurada</span>}
                   </div>
                   {acc.account_name && <p className="text-xs text-[var(--text-secondary)] mt-0.5">Conta: {acc.account_name}</p>}
                   {acc.is_active && <p className="text-xs text-[var(--text-secondary)]">Permissões: {acc.permissions} | Última sincronização: {acc.last_synced ? new Date(acc.last_synced).toLocaleTimeString('pt-BR') : '-'}</p>}
@@ -63,16 +64,17 @@ export default function Integrations() {
             <div key={ai.id} className={`p-4 rounded-lg ${ai.is_primary ? 'border border-primary-500/20 bg-primary-500/5' : 'bg-white/5'}`}>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <Bot size={24} className={ai.provider === 'claude' ? 'text-amber-400' : ai.provider === 'gemini' ? 'text-blue-400' : 'text-emerald-400'} />
+                  <Bot size={24} className={ai.provider === 'gemini' ? 'text-blue-400' : ai.provider === 'claude' ? 'text-amber-400' : 'text-emerald-400'} />
                   <div>
                     <div className="flex items-center gap-2">
-                      <h4 className="font-medium text-[var(--text)] capitalize">{ai.provider} {ai.provider === 'claude' ? '(Anthropic)' : ai.provider === 'gemini' ? '(Google)' : ''}</h4>
+                      <h4 className="font-medium text-[var(--text)] capitalize">{ai.provider} {ai.provider === 'gemini' ? '(Google)' : ai.provider === 'claude' ? '(Anthropic)' : ''}</h4>
                       {ai.is_primary && <span className="badge bg-primary-500/10 text-primary-400">Principal</span>}
                       <span className={`badge ${ai.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>{ai.status === 'active' ? 'Ativo' : 'Desconectado'}</span>
+                      {ai.api_configured && <span className="badge bg-blue-500/10 text-blue-400 flex items-center gap-1"><KeyRound size={10} /> API Key configurada</span>}
                     </div>
                     <p className="text-xs text-[var(--text-secondary)] mt-1">
+                      {ai.provider === 'gemini' && '"Análise multimodal rápida e integração nativa com Google Cloud"'}
                       {ai.provider === 'claude' && '"Excelente análise estratégica e explicações detalhadas"'}
-                      {ai.provider === 'gemini' && '"Bom para análise de padrões visuais e contexto em tempo real"'}
                       {ai.provider === 'deepseek' && '"Eficiente e rápido para análises de volume alto"'}
                     </p>
                   </div>
