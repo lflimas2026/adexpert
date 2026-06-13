@@ -2,7 +2,11 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { campaigns, recommendations, alerts, earnings, actionLogs, insights, connectedAccounts, aiConfigs, preferences, user } from './data/mock';
 
-const app = new Hono();
+type Bindings = {
+  DB: D1Database;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('/*', cors({ origin: '*', credentials: true }));
 
@@ -94,5 +98,34 @@ app.post('/api/chat', async c => {
 });
 
 app.get('/api/health', c => c.json({ status: 'ok', version: '1.0.0' }));
+
+// Docs Editor Endpoints (D1 SQLite Backup)
+app.get('/docs/app-docs.txt', async c => {
+  try {
+    const doc = await c.env.DB.prepare('SELECT content FROM docs_backup ORDER BY created_at DESC LIMIT 1').first<{ content: string }>();
+    if (!doc) {
+      return c.text('Documentação não encontrada', 404);
+    }
+    return c.text(doc.content, 200, { 'Content-Type': 'text/plain; charset=utf-8' });
+  } catch (err) {
+    return c.text('Erro ao carregar docs', 500);
+  }
+});
+
+app.post('/api/docs/save', async c => {
+  try {
+    const content = await c.req.text();
+    if (!content || content.length === 0) {
+      return c.json({ error: 'Conteúdo vazio' }, 400);
+    }
+    await c.env.DB.prepare(`
+      INSERT INTO docs_backup (content, created_at)
+      VALUES (?, datetime('now'))
+    `).bind(content).run();
+    return c.json({ success: true, message: 'Documentação salva' });
+  } catch (err: any) {
+    return c.json({ error: 'Erro ao salvar' }, 500);
+  }
+});
 
 export default app;

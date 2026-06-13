@@ -7,3 +7,7 @@ export interface Earnings { total_spending: number; estimated_savings: number; a
 export interface ActionLog { id: string; platform: string; campaign_name: string; action_type: string; before_state: any; after_state: any; impact_expected: string; impact_actual: string; implemented_by: string; timestamp: string; reason: string; }
 export interface Insights { total_recommendations: number; success_rate: number; total_savings: number; total_extra: number; total_impact: number; total_paid: number; overall_roi: number; top_campaigns: any[]; patterns: any[]; failures: any[]; future: any[]; }
 export interface DashboardData { summary: { spending: number; clicks: number; conversions: number; roas: number }; status: { active: number; paused: number; critical: number; warning: number; total: number }; topRecommendations: Recommendation[]; alerts: Alert[]; platformComparison: { platform: string; spend: number; roas: number; cpa: number }[]; earnings: Earnings; }
+export interface Documentation {
+  content: string;
+}
+

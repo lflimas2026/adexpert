@@ -3,5 +3,15 @@ compatibility_date = "2024-07-01"
 compatibility_flags = ["nodejs_compat"]
 main = "src/worker.ts"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "adexpert-db"
+database_id = "adexpert-db-local-id"
+
 [env.production]
 vars = { ENVIRONMENT = "production" }
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "adexpert-db"
+database_id = "adexpert-db-local-id"
+

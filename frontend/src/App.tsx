@@ -8,6 +8,7 @@ import Integrations from './pages/Integrations';
 import Chat from './pages/Chat';
 import History from './pages/History';
 import Automations from './pages/Automations';
+import DocsEditor from './pages/admin/docs-editor';
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/chat" element={<Chat />} />
             <Route path="/historico" element={<History />} />
             <Route path="/automacoes" element={<Automations />} />
+            <Route path="/admin/docs-editor" element={<DocsEditor />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

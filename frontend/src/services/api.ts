@@ -33,7 +33,40 @@ async function postAPI<T>(endpoint: string, body: any, fallback: T): Promise<T> 
   }
 }
 
-import { DashboardData, Campaign, Recommendation, Insights, ActionLog, Earnings } from '../types';
+async function putAPI<T>(endpoint: string, body: any, fallback: T): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT);
+  try {
+    const res = await fetch(`${BASE}${endpoint}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body), signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (!res.ok) return fallback;
+    return res.json();
+  } catch {
+    clearTimeout(timer);
+    return fallback;
+  }
+}
+
+async function deleteAPI<T>(endpoint: string, fallback: T): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT);
+  try {
+    const res = await fetch(`${BASE}${endpoint}`, {
+      method: 'DELETE', signal: controller.signal
+    });
+    clearTimeout(timer);
+    if (!res.ok) return fallback;
+    return res.json();
+  } catch {
+    clearTimeout(timer);
+    return fallback;
+  }
+}
+
+import { DashboardData, Campaign, Recommendation, Insights, ActionLog, Earnings, Documentation } from '../types';
 
 const emptyDashboard: DashboardData = {
   summary: { spending: 0, clicks: 0, conversions: 0, roas: 0 },
@@ -60,4 +93,7 @@ export const api = {
   getActionLogs: () => fetchAPI<ActionLog[]>('/api/action-logs', []),
   getEarnings: () => fetchAPI<Earnings | null>('/api/earnings', null),
   chat: (message: string) => postAPI<{ reply: string }>('/api/chat', { message }, { reply: '' }),
+  getDocs: () => fetchAPI<Documentation>('/api/docs', { content: '' }),
+  saveDocs: (content: string) => postAPI<{ success: boolean }>('/api/docs/save', { content }, { success: false }),
 };
+

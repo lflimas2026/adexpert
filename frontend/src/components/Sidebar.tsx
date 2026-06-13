@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, PieChart, Settings, MessageSquare, History, Bot, Zap } from 'lucide-react';
+import { LayoutDashboard, BarChart3, PieChart, Settings, MessageSquare, History, Bot, Zap, BookOpen } from 'lucide-react';
 
 const items = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -11,6 +11,7 @@ const items = [
   { to: '/automacoes', icon: Zap, label: 'Automações' },
   { to: '/chat', icon: MessageSquare, label: 'Chat Expert' },
   { to: '/historico', icon: History, label: 'Histórico' },
+  { to: '/admin/docs-editor', icon: BookOpen, label: '📚 Documentação' },
 ];
 
 export default function Sidebar() {

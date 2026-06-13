@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
+import fs from 'fs';
+import path from 'path';
 import { campaigns, recommendations, alerts, earnings, actionLogs, insights, connectedAccounts, aiConfigs, preferences, user } from './data/mock';
 
 const app = express();
@@ -10,6 +12,7 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 
 app.use(cors());
 app.use(express.json());
+app.use(express.text());
 
 const PORT = 3001;
 
@@ -115,6 +118,73 @@ app.get('/api/action-logs', (req, res) => {
 app.get('/api/earnings', (req, res) => {
   res.json(earnings);
 });
+
+// Simple File-Based Documentation Operations (Local Express Mock)
+const txtFilePath = path.join(__dirname, '..', '..', 'docs', 'app-docs.txt');
+const backupsFilePath = path.join(__dirname, 'data', 'docs_backup.json');
+
+const readTxtDocs = () => {
+  try {
+    if (!fs.existsSync(txtFilePath)) {
+      const docsDir = path.dirname(txtFilePath);
+      if (!fs.existsSync(docsDir)) {
+        fs.mkdirSync(docsDir, { recursive: true });
+      }
+      fs.writeFileSync(txtFilePath, '# Documentação', 'utf-8');
+    }
+    return fs.readFileSync(txtFilePath, 'utf-8');
+  } catch (err) {
+    console.error('Error reading txt doc:', err);
+    return '';
+  }
+};
+
+const saveTxtDocs = (content: string) => {
+  try {
+    const docsDir = path.dirname(txtFilePath);
+    if (!fs.existsSync(docsDir)) {
+      fs.mkdirSync(docsDir, { recursive: true });
+    }
+    fs.writeFileSync(txtFilePath, content, 'utf-8');
+    
+    // Backup emulation
+    let backups: any[] = [];
+    if (fs.existsSync(backupsFilePath)) {
+      try {
+        backups = JSON.parse(fs.readFileSync(backupsFilePath, 'utf-8'));
+      } catch {}
+    }
+    backups.push({
+      id: `backup-${Date.now()}`,
+      content,
+      created_at: new Date().toISOString()
+    });
+    fs.writeFileSync(backupsFilePath, JSON.stringify(backups, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('Error writing txt doc/backup:', err);
+    return false;
+  }
+};
+
+app.get('/docs/app-docs.txt', (req, res) => {
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+  res.send(readTxtDocs());
+});
+
+app.post('/api/docs/save', (req, res) => {
+  const content = typeof req.body === 'string' ? req.body : req.body.content;
+  if (content === undefined || content.length === 0) {
+    return res.status(400).json({ error: 'Conteúdo vazio' });
+  }
+  const success = saveTxtDocs(content);
+  if (success) {
+    res.json({ success: true, message: 'Documentação salva' });
+  } else {
+    res.status(500).json({ error: 'Erro ao salvar' });
+  }
+});
+
 
 // Chat
 const chatContext = `Você é o AdExpert, um consultor de tráfego pago IA 24/7. 
