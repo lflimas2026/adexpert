@@ -11,6 +11,9 @@ import Automations from './pages/Automations';
 import Marketing from './pages/Marketing';
 import CampaignDetail from './pages/CampaignDetail';
 import DocsEditor from './pages/admin/docs-editor';
+import CampaignNew from './pages/CampaignNew';
+import CampaignWizard from './pages/CampaignWizard';
+import { CampaignWizardProvider } from './context/CampaignWizardContext';
 
 export default function App() {
   return (
@@ -28,6 +31,22 @@ export default function App() {
             <Route path="/marketing" element={<Marketing />} />
             <Route path="/marketing/:campaignId" element={<CampaignDetail />} />
             <Route path="/admin/docs-editor" element={<DocsEditor />} />
+            <Route
+              path="/app/campaign/new"
+              element={
+                <CampaignWizardProvider>
+                  <CampaignNew />
+                </CampaignWizardProvider>
+              }
+            />
+            <Route
+              path="/app/campaign/wizard/:step"
+              element={
+                <CampaignWizardProvider>
+                  <CampaignWizard />
+                </CampaignWizardProvider>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

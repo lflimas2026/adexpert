@@ -351,6 +351,91 @@ app.post('/api/docs/save', (req, res) => {
   }
 });
 
+// Campaign Wizard - AI Analysis
+app.post('/api/campaigns/analyze', async (req, res) => {
+  const { description, niche, price, margin, target_location, creatives: crs } = req.body;
+
+  const hasVideo = crs?.some((c: any) => c.type === 'video');
+  const hasImage = crs?.some((c: any) => c.type === 'image');
+  const locations = target_location?.length ? target_location.join(', ') : 'Brasil';
+  const productPrice = price || 120;
+  const productMargin = margin || 40;
+  const cacIdeal = Math.round(productPrice * (productMargin / 100) * 0.25);
+
+  const objectiveConfidence = description.toLowerCase().includes('vender') || description.toLowerCase().includes('comprar') || description.toLowerCase().includes('venda') ? 95 : 85;
+  const audienceSize = (target_location?.length || 3) * 800;
+
+  const result = {
+    objective: {
+      value: 'conversions',
+      confidence: objectiveConfidence,
+      reason: `Você tem preço claro (R$ ${productPrice}) e quer vendas diretas. Conversões é o objetivo mais eficiente.`
+    },
+    audience: {
+      demographics: `Público em ${locations}`,
+      size: `${audienceSize}K pessoas`,
+      confidence: 88,
+      reason: `Baseado no seu nicho (${niche || 'geral'}) e localização (${locations}), este é seu público ideal.`
+    },
+    creative: {
+      name: hasVideo ? (crs?.find((c: any) => c.type === 'video')?.name || 'Vídeo') : (crs?.[0]?.name || 'Imagem'),
+      ctr: hasVideo ? '2.4%' : '1.8%',
+      confidence: 95,
+      reason: hasVideo
+        ? 'Video tem 40% mais CTR que imagem. Formato vertical perfeito para Stories/Reels.'
+        : 'Imagem limpa com bom enquadramento. Considere adicionar vídeo para melhor performance.'
+    },
+    budget: {
+      daily: `R$ 50-100`,
+      duration: '7 dias',
+      confidence: 87,
+      reason: `Com CAC ideal R$ ${cacIdeal}, começar com R$ 50/dia permite testar + iterar rápido.`,
+      roi: '+175-310%'
+    },
+    name_suggestions: [
+      `${niche?.split(' ')[0] || 'Produto'}-Conv-Jul24`,
+      `Verao-Conversao-${target_location?.[0]?.split(' ')[0] || 'BR'}`,
+      `Premium-${niche?.replace(/\s+/g, '-') || 'Product'}-Sales-July`
+    ]
+  };
+
+  setTimeout(() => res.json(result), 2000);
+});
+
+// Campaign Wizard - Publish
+app.post('/api/campaigns/publish', (req, res) => {
+  const body = req.body;
+  const now = new Date().toISOString();
+  const newCampaign: any = {
+    id: `c${Date.now()}`,
+    user_id: 'u1',
+    platform: 'meta',
+    external_campaign_id: null,
+    name: body.name || 'Nova Campanha Wizard',
+    objective: body.objective || 'CONVERSIONS',
+    status: 'active',
+    budget_daily: Number(body.budget_daily) || 50,
+    start_date: now.split('T')[0],
+    end_date: body.duration ? new Date(Date.now() + body.duration * 86400000).toISOString().split('T')[0] : undefined,
+    target_cpa: body.cac_ideal || undefined,
+    last_updated: now,
+    metrics: { clicks: 0, impressions: 0, ctr: 0, cpc: 0, cpm: 0, conversions: 0, cost: 0, roas: 0 },
+    arquivada: false,
+    audience: body.audience || {},
+    placements: body.placement || [],
+    creatives: body.creatives ? [body.creatives.primary, ...body.creatives.secondary].filter(Boolean).map((name: string) => ({ id: name, name })) : [],
+    schedule: [],
+    keywords: [],
+    copy: body.copy || '',
+    ab_test_enabled: !!body.ab_test_enabled,
+    auto_scale_enabled: !!body.auto_scale_enabled,
+  };
+  campaigns.unshift(newCampaign);
+  localCampaigns.unshift(newCampaign);
+
+  setTimeout(() => res.json({ success: true, campaign: newCampaign }), 1500);
+});
+
 // Chat com Gemini
 app.post('/api/chat', async (req, res) => {
   const { message, history } = req.body;

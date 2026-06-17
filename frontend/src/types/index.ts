@@ -11,3 +11,52 @@ export interface Documentation {
   content: string;
 }
 
+// Campaign Wizard Types
+export interface CampaignWizardData {
+  description: string;
+  objective: string;
+  name: string;
+  audience: {
+    age_min: number;
+    age_max: number;
+    locations: string[];
+    interests: string[];
+  };
+  placement: string[];
+  creatives: {
+    primary: string;
+    secondary: string[];
+  };
+  budget: number;
+  duration: number;
+  url: string;
+  pixel_event: string;
+  niche: string;
+  price: number;
+  margin: number;
+  cac_ideal: number;
+  target_location: string[];
+  target_audience: string[];
+  copy: string;
+  ab_test_enabled: boolean;
+  auto_scale_enabled: boolean;
+}
+
+export interface AIAnalysisResult {
+  objective: { value: string; confidence: number; reason: string };
+  audience: { demographics: string; size: string; confidence: number; reason: string };
+  creative: { name: string; ctr: string; confidence: number; reason: string };
+  budget: { daily: string; duration: string; confidence: number; reason: string; roi: string };
+  name_suggestions: string[];
+}
+
+export interface CreativeFile {
+  id: string;
+  name: string;
+  type: 'image' | 'video';
+  dimensions: string;
+  size: string;
+  file: File;
+  preview: string;
+}
+

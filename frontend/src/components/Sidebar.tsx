@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BarChart3, PieChart, Settings, MessageSquare, History, Bot, Zap, BookOpen, Megaphone } from 'lucide-react';
+import { LayoutDashboard, BarChart3, PieChart, Settings, MessageSquare, History, Bot, Zap, BookOpen, Megaphone, PlusCircle } from 'lucide-react';
 
 const items = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/app/campaign/wizard/1', icon: PlusCircle, label: 'Criar Campanha' },
   { to: '/marketing', icon: Megaphone, label: 'Campanhas' },
   { to: '/plataforma/meta', icon: BarChart3, label: 'Meta Ads' },
   { to: '/plataforma/google', icon: BarChart3, label: 'Google Ads' },

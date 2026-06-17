@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, MousePointerClick, Target, TrendingUp, AlertTriangle, Info, CheckCircle2, Zap, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DollarSign, MousePointerClick, Target, TrendingUp, AlertTriangle, Info, CheckCircle2, Zap, ArrowUpRight, Plus, History } from 'lucide-react';
 import { api } from '../services/api';
 import { DashboardData } from '../types';
 import StatCard from '../components/StatCard';
 import RecommendationCard from '../components/RecommendationCard';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
@@ -55,6 +57,29 @@ export default function Dashboard() {
           {data.topRecommendations.map(rec => (
             <RecommendationCard key={rec.id} rec={rec} onRespond={(id, status) => setData(prev => prev ? { ...prev, topRecommendations: prev.topRecommendations.filter(r => r.id !== id) } : prev)} />
           ))}
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--surface)', borderColor: 'var(--border)' }} className="border rounded-xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Zap size={18} className="text-primary-400" />
+          <h3 className="text-sm font-semibold text-[var(--text)]">Ações Rápidas</h3>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={() => navigate('/app/campaign/new')}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-primary-500 text-white text-sm font-bold hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20"
+          >
+            <Plus size={20} />
+            + Criar Nova Campanha
+          </button>
+          <button
+            onClick={() => navigate('/marketing')}
+            className="flex-1 flex items-center justify-center gap-2 px-6 py-4 rounded-xl border border-[var(--border)] text-[var(--text)] text-sm font-medium hover:bg-white/5 transition-all"
+          >
+            <History size={18} />
+            Ver Campanhas Anteriores
+          </button>
         </div>
       </div>
 

@@ -66,7 +66,7 @@ async function deleteAPI<T>(endpoint: string, fallback: T): Promise<T> {
   }
 }
 
-import { DashboardData, Campaign, Recommendation, Insights, ActionLog, Earnings, Documentation } from '../types';
+import { DashboardData, Campaign, Recommendation, Insights, ActionLog, Earnings, Documentation, AIAnalysisResult } from '../types';
 
 const emptyDashboard: DashboardData = {
   summary: { spending: 0, clicks: 0, conversions: 0, roas: 0 },
@@ -106,5 +106,16 @@ export const api = {
   chat: (message: string) => postAPI<{ reply: string }>('/api/chat', { message }, { reply: '' }),
   getDocs: () => fetchAPI<Documentation>('/api/docs', { content: '' }),
   saveDocs: (content: string) => postAPI<{ success: boolean }>('/api/docs/save', { content }, { success: false }),
+
+  // Campaign Wizard
+  analyzeCampaign: (data: { description: string; niche: string; price: number; margin: number; target_location: string[]; creatives?: any[] }) =>
+    postAPI<AIAnalysisResult>('/api/campaigns/analyze', data, {
+      objective: { value: 'conversions', confidence: 92, reason: 'Análise baseada na sua descrição de campanha.' },
+      audience: { demographics: 'Público geral 25-45', size: '2.4M pessoas', confidence: 88, reason: 'Público com maior poder de compra baseado no nicho.' },
+      creative: { name: 'criativo_principal', ctr: '2.4%', confidence: 95, reason: 'Formato ideal para seu objetivo.' },
+      budget: { daily: 'R$ 50-100', duration: '7 dias', confidence: 87, reason: 'Orçamento ideal para teste.', roi: '+175-310%' },
+      name_suggestions: ['Campanha-Conv-Jul24', 'Verao-Conversao-Masculino', 'Premium-Tshirt-Sales-July'],
+    }),
+  publishCampaign: (data: any) => postAPI<{ success: boolean; campaign: Campaign }>('/api/campaigns/publish', data, { success: false, campaign: {} as Campaign }),
 };
 
